@@ -635,8 +635,12 @@ static char* appname;
 static void* monitor(void*);
 static pthread_t monitor_thread;
 
+static __thread int inside_memleak_init = 0;
+
 static void init()
 {
+  inside_memleak_init = 1;
+
   // This is used in Header. Just check it here to be sure.
   assert(sizeof(intptr_t) == sizeof(void*));
   pagesize = sysconf(_SC_PAGESIZE);
@@ -656,13 +660,15 @@ static void init()
   stats.max_backtraces = 4;
   if (unsetenv("LD_PRELOAD") == -1)
     fprintf(stderr, "Failed to unset LD_PRELOAD: %s\n", strerror(errno));
+
+  inside_memleak_init = 0;
 }
 
 static __thread int inside_memleak_stats = 0;
 
 static void add(Header* header, size_t size, void** backtrace, int backtrace_size, size_t offset)
 {
-  if (UNLIKELY(inside_memleak_stats))
+  if (UNLIKELY(inside_memleak_stats||inside_memleak_init))
   {
     header->magic_number = MAGIC_MEMLEAK_STATS;
     header->posix_memalign_offset = offset;
