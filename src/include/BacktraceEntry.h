@@ -37,6 +37,7 @@ struct BacktraceEntry {
   void* ptr[backtrace_size_max];                //!< The backtrace.
   int backtrace_size;                           //!< Number of valid pointers in 'ptr'.
   int allocations;                              //!< Number of current allocations with this backtrace.
+  size_t allocations_size;                      //!< Total size of current allocations with this backtrace.
   struct BacktraceEntry* next;                  //!< Next backtrace.
   struct BacktraceEntry* hashnext;              //!< Next backtrace with the same hash.
   int backtrace_nr;                             //!< Small unique ID assigned to this backtrace.

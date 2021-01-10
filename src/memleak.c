@@ -680,6 +680,7 @@ static void add(Header* header, size_t size, void** backtrace, int backtrace_siz
   header->size = size;
   pthread_mutex_lock(&memleak_mutex);
   header->backtrace = update_entry_add(backtrace, backtrace_size);
+  header->backtrace->allocations_size += size;
 #ifdef DEBUG_EXPENSIVE
   --(header->backtrace->allocations);
   check_intervals(header->backtrace);
@@ -723,6 +724,7 @@ static void del(Header* header)
   --stats.allocations;
   header->prev->next = header->next;
   header->next->prev = header->prev;
+  header->backtrace->allocations_size -= header->size;
   update_entry_del(header);
 #ifdef DEBUG_EXPENSIVE
   check_interval_headers(header->backtrace);
@@ -979,7 +981,7 @@ void memleak_stats()
       fflush(stdout);
     }
     BacktraceEntry* entry = &backtraces[e];
-    fprintf(fbacktraces, "Backtrace %d:\n", entry->backtrace_nr);
+    fprintf(fbacktraces, "Backtrace %d: (%d allocations, total %d bytes)\n", entry->backtrace_nr, entry->allocations, entry->allocations_size);
     addr2line_print(fbacktraces, entry->ptr, entry->backtrace_size);
   }
   fclose(fbacktraces);
