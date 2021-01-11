@@ -947,15 +947,19 @@ void memleak_stats()
   // Count the number of entries that need to be written to file.
   int entries = 0;
   for(BacktraceEntry* entry = stats.first_entry; entry; entry = entry->next)
-    entries += (entry->need_printing && !entry->printed) ? 1 : 0;
+  {
+    entries += 1; // I don't recall exactly why I (Arnaud) set it to 1
+    // entries += (entry->need_printing && !entry->printed) ? 1 : 0;
+  }
 
   // Make a copy of the BacktraceEntry's.
   BacktraceEntry* backtraces = (*memleak_libc_malloc)(entries * sizeof(BacktraceEntry));
   entries = 0;
   for(BacktraceEntry* entry = stats.first_entry; entry; entry = entry->next)
   {
-    if (!entry->need_printing || entry->printed)
-      continue;
+    // don't recall why I commented the following...
+    // if (!entry->need_printing || entry->printed)
+    //   continue;
     memcpy(&backtraces[entries], entry, sizeof(BacktraceEntry));
     entry->printed = 1;
     ++entries;
@@ -981,8 +985,11 @@ void memleak_stats()
       fflush(stdout);
     }
     BacktraceEntry* entry = &backtraces[e];
+    if (entry->allocations == 0)
+      continue; // libmemleak has conserved the backtrace, but it's not leaking
     fprintf(fbacktraces, "Backtrace %d: (%d allocations, total %d bytes)\n", entry->backtrace_nr, entry->allocations, entry->allocations_size);
     addr2line_print(fbacktraces, entry->ptr, entry->backtrace_size);
+    fprintf(fbacktraces, "\n");
   }
   fclose(fbacktraces);
   if (entries > 0)
@@ -991,6 +998,32 @@ void memleak_stats()
 
   // Done.
   inside_memleak_stats = 0;
+}
+
+static void memleak_final_stats() {
+
+  // LOCK ADMINISTRATIVE DATA
+  pthread_mutex_lock(&memleak_mutex);
+
+  // Count the number of entries that need to be written to file.
+  for(BacktraceEntry* entry = stats.first_entry; entry; entry = entry->next)
+  {
+    printf( "Backtrace %d: (%d allocations)\n", entry->backtrace_nr, entry->allocations);
+    //addr2line_print(stdout, entry->ptr, entry->backtrace_size);
+
+    int count = 0;
+    for (Header* header = entry->head.prev; header != &entry->head; header = header->prev)
+    {
+      ++count;
+      // Interval* interval = header->interval;
+      printf("\tAlloc %d: Header %p; time %lu; size %lu", count, header, header->time, header->size);
+      printf("\n");
+    }
+    printf("(count=%d)\n", count);
+  }
+
+  // UNLOCK ADMINISTRATIVE DATA
+  pthread_mutex_unlock(&memleak_mutex);
 }
 
 //---------------------------------------------------------------------------------------------
@@ -1605,6 +1638,7 @@ static void terminate()
   interval_stop_recording();
   printf("libmemleak: Final memleak stats:\n");
   memleak_stats();
+  memleak_final_stats();
 }
 
 #ifdef DEBUG_EXPENSIVE
