@@ -6,7 +6,7 @@
 
 define(CW_VERSION_MAJOR, 0)
 define(CW_VERSION_MINOR, 1)
-define(CW_VERSION_REVISION, 2)
+define(CW_VERSION_REVISION, 2.2101A)
 
 # Package name and bug reporting.
 define(CW_PACKAGE_NAME, [libmemleak])
