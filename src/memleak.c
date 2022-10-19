@@ -310,7 +310,7 @@ void interval_print(Interval const* interval)
     printf("%4lu>(%4lu)", interval->end, interval->end - interval->start);
   else
     printf("now");
-  printf(": %5lu allocations (%6lu total, %4.1f%%), size %7lu; %6.2f allocations/s, %lu bytes/s\n",
+  printf(": %5zu allocations (%6zu total, %4.1f%%), size %7zu; %6.2f allocations/s, %lu bytes/s\n",
       interval->n, interval->total_n, (100.0 * interval->n / interval->total_n), interval->size,
       (double)interval->n / (interval->end - interval->start),
       interval->size / (interval->end - interval->start));
@@ -928,7 +928,7 @@ void memleak_stats()
     totm /= 10;
     ++count2;
   }
-  fprintf(stdout, "%s: Now: %lu; \tBacktraces: %lu; \tallocations: %lu; \ttotal memory: %s bytes.\n",
+  fprintf(stdout, "%s: Now: %lu; \tBacktraces: %zu; \tallocations: %zu; \ttotal memory: %s bytes.\n",
       appname, now, local_stats.backtraces, local_stats.allocations, p);
 
   // Print all intervals and mark the backtrace entries as needing printing.
@@ -1021,7 +1021,8 @@ static void memleak_final_stats() {
     {
       ++count;
       // Interval* interval = header->interval;
-      printf("\tAlloc %d: Header %p; time %lu; size %lu", count, header, header->time, header->size);
+      printf("\tAlloc %d: Header %p; time %lu; size %lu", count, header,
+        (long unsigned int)header->time, (long unsigned int)header->size);
       printf("\n");
     }
     printf("(count=%d)\n", count);
