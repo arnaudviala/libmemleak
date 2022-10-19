@@ -28,13 +28,17 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
+
+#if !defined(WITHOUT_READLINE)
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif
 
 #define UNUSED(...) (void)(__VA_ARGS__)
 
 void error(char const*);
 
+#if !defined(WITHOUT_READLINE)
 // A static variable for holding the line.
 static char* line_read = NULL;
 
@@ -57,6 +61,15 @@ char* rl_gets()
 
   return line_read;
 }
+#else // without readline library, let's have a very basic prompt
+char* rl_gets()
+{
+  fputs("libmemleak> ", stdout);
+  fflush(stdout);
+  static char buffer[1024];
+  return fgets(buffer, sizeof(buffer), stdin);
+}
+#endif
 
 int main(int argc, char* argv[])
 {
