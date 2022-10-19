@@ -40,6 +40,9 @@
 #include <sys/un.h>
 #include <errno.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include "addr2line.h"
 #include "sort.h"
 

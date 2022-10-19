@@ -21,6 +21,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#if !defined(WITHOUT_BFD)
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -64,6 +66,8 @@ struct Addr2Line {
 
 //! @brief Abbreviation for struct Addr2Line
 typedef struct Addr2Line Addr2Line;
+
+#endif // !defined(WITHOUT_BFD)
 
 //! @brief Initialize the use of addr2line.
 //

@@ -26,6 +26,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(WITHOUT_BFD)
+
+void addr2line_init()
+{
+  printf("addr2line_init() is not available in this platform\n");
+}
+
+void addr2line_print(FILE* fbacktraces, void** backtrace, size_t backtrace_size)
+{
+  size_t s=0;
+  fprintf(fbacktraces, "Backtrace:\n");
+  for(size_t s=0; s<backtrace_size ; s++)
+  {
+    fprintf(fbacktraces, "  [%zu] %p\n", s, backtrace[s]);
+  }
+}
+
+#else
+
 #include <libiberty/demangle.h>
 #include <assert.h>
 #include <ctype.h>
@@ -481,3 +501,6 @@ int main()
   }
 }
 #endif
+
+
+#endif // defined(WITHOUT_BFD)
