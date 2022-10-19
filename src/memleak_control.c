@@ -109,33 +109,33 @@ int main(int argc, char* argv[])
       size_t len = read(sockfd, buffer, 80);
       if (len == 0)
       {
-	printf("Application terminated.\n");
-	exit(0);
+        printf("Application terminated.\n");
+        exit(0);
       }
       int do_prompt = 0, quit = 0;
       if (len >= 7 && strncmp(buffer + len - 7, "PROMPT\n", 7) == 0)
       {
-	do_prompt = 1;
-	len -= 7;
+        do_prompt = 1;
+        len -= 7;
       }
       else if (len >= 5 && strncmp(buffer + len - 5, "QUIT\n", 5) == 0)
       {
-	len -= 5;
-	quit = 1;
+        len -= 5;
+        quit = 1;
       }
       if (len > 0)
-	len = write(1, buffer, len);                    // Ignore return value, but avoid compiler warning.
+        len = write(1, buffer, len);                    // Ignore return value, but avoid compiler warning.
       if (quit)
       {
-	printf("Application terminated.\n");
-	exit(0);
+        printf("Application terminated.\n");
+        exit(0);
       }
       if (do_prompt)
       {
-	char* line = NULL;
-	while (!line || !*line)
-	  line = rl_gets();
-	len = write(sockfd, line, strlen(line));        // Ignore return value, but avoid compiler warning.
+        char* line = NULL;
+        while (!line || !*line)
+          line = rl_gets();
+        len = write(sockfd, line, strlen(line));        // Ignore return value, but avoid compiler warning.
       }
     }
   }

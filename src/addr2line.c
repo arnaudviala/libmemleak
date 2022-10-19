@@ -266,16 +266,16 @@ void addr2line_init()
       *newline = 0;
       char* mode = strchr(line_start, ' ');
       if (!mode)
-	continue;
+        continue;
       if (strncmp(mode, " r-xp", 5) != 0)
-	continue;
+        continue;
       char* filename = newline;
       while(*--filename != ' ');
       ++filename;
       //printf("*** Full line: \"%s\"\n", line_start);
       //printf("*** File name: \"%s\"\n", filename);
       if (*filename != '/')
-	continue;
+        continue;
       unsigned long ebegin = 0;
       unsigned long eend = 0;
       char* digit = line_start - 1;
@@ -347,15 +347,15 @@ static bool addr2line_lookup(Addr2Line* self, bfd_vma pc)
       char* res = cplus_demangle(self->_methodName, DMGL_ANSI|DMGL_PARAMS);
       if (res == NULL)
       {
-	size_t len = strlen(self->_methodName);
-	if (len > 1024)
-	  len = 1023;
-	self->methodName = malloc(len + 1);
-	strncpy(self->methodName, self->_methodName, len);
-	self->methodName[len] = 0;
+        size_t len = strlen(self->_methodName);
+        if (len > 1024)
+          len = 1023;
+        self->methodName = malloc(len + 1);
+        strncpy(self->methodName, self->_methodName, len);
+        self->methodName[len] = 0;
       }
       else
-	self->methodName = res;
+        self->methodName = res;
     }
     return true;
   }
@@ -401,32 +401,32 @@ void addr2line_print(FILE* fbacktraces, void** backtrace, size_t backtrace_size)
       bool found = addr2line_lookup(addr2line, (bfd_vma)addr - (is_no_pie(addr2line, range) ? (bfd_vma)0 : (bfd_vma)range->begin));
       if (found)
       {
-	size_t len = strlen(addr2line->methodName) + 4;
-	if (addr2line->fileName)
-	{
-	  len += strlen(addr2line->fileName) + 4;
-	  if (addr2line->line)
-	    len += 8;	// :9999999 Maximal 10,000,000 lines per file.
-	}
-	framestr = (*memleak_libc_malloc)(len + 1);
-	len = sprintf(framestr, " in %s", addr2line->methodName);
-	if (addr2line->fileName && addr2line->line)
-	  sprintf(framestr + len, " at %s:%ld", addr2line->fileName, addr2line->line);
-	else if (addr2line->fileName)
-	  sprintf(framestr + len, " at %s", addr2line->fileName);
+        size_t len = strlen(addr2line->methodName) + 4;
+        if (addr2line->fileName)
+        {
+          len += strlen(addr2line->fileName) + 4;
+          if (addr2line->line)
+            len += 8;        // :9999999 Maximal 10,000,000 lines per file.
+        }
+        framestr = (*memleak_libc_malloc)(len + 1);
+        len = sprintf(framestr, " in %s", addr2line->methodName);
+        if (addr2line->fileName && addr2line->line)
+          sprintf(framestr + len, " at %s:%ld", addr2line->fileName, addr2line->line);
+        else if (addr2line->fileName)
+          sprintf(framestr + len, " at %s", addr2line->fileName);
       }
       else
       {
-	char* lastslash = strrchr(addr2line->executable, '/');
-	size_t len = strlen(lastslash + 1) + 6;
-	framestr = (*memleak_libc_malloc)(len + 1);
-	sprintf(framestr, " in \"%s\"", lastslash + 1);
+        char* lastslash = strrchr(addr2line->executable, '/');
+        size_t len = strlen(lastslash + 1) + 6;
+        framestr = (*memleak_libc_malloc)(len + 1);
+        sprintf(framestr, " in \"%s\"", lastslash + 1);
       }
     }
     else
     {
       if (!strs)
-	strs = backtrace_symbols(backtrace, backtrace_size);
+        strs = backtrace_symbols(backtrace, backtrace_size);
       size_t len = strlen(strs[i]);
       framestr = (*memleak_libc_malloc)(len + 1);
       strcpy(framestr, strs[i]);

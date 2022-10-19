@@ -3,7 +3,7 @@
 #include <inttypes.h>
 #include <deque>
 #include <cstdio>
-#include <string.h>	// for memset()
+#include <string.h>        // for memset()
 
 extern "C" {
 #include "addr2line.h"
@@ -44,17 +44,17 @@ int main()
     switch(i)
     {
       case 0:
-	pthread_create(&thread[0], NULL, &thread_entry0, NULL);
-	break;
+        pthread_create(&thread[0], NULL, &thread_entry0, NULL);
+        break;
       case 1:
-	pthread_create(&thread[1], NULL, &thread_entry1, NULL);
-	break;
+        pthread_create(&thread[1], NULL, &thread_entry1, NULL);
+        break;
       case 2:
-	pthread_create(&thread[2], NULL, &thread_entry2, NULL);
-	break;
+        pthread_create(&thread[2], NULL, &thread_entry2, NULL);
+        break;
       case 3:
-	pthread_create(&thread[3], NULL, &thread_entry3, NULL);
-	break;
+        pthread_create(&thread[3], NULL, &thread_entry3, NULL);
+        break;
     }
   }
 
@@ -144,19 +144,19 @@ void do_work(bool leak)
       void* ptr = remove();
       if (!leak_memory)
       {
-	free(ptr);
+        free(ptr);
       }
       else if (ptr)
-	++leaked_mem;
+        ++leaked_mem;
     }
     else
     {
       if (how == 0)
-	store(realloc(remove(), size));
+        store(realloc(remove(), size));
       else if (how == 1)
-	store(calloc(13, size / 13));
+        store(calloc(13, size / 13));
       else
-	store(malloc(size));
+        store(malloc(size));
     }
   }
 

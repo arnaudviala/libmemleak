@@ -359,7 +359,7 @@ static void interval_add(Interval* interval, Header* header)
     interval->first = header;
 #ifdef DEBUG_VERBOSE
     printf("Backtrace: %p: interval [%lu - %lu>(%lu); added first = header = %p[%lu] (header->prev = %p; &header->backtrace->head = %p)\n",
-    	header->backtrace, interval->start, interval->end, interval->end - interval->start, header, header->time, header->prev, &header->backtrace->head);
+            header->backtrace, interval->start, interval->end, interval->end - interval->start, header, header->time, header->prev, &header->backtrace->head);
 #endif
     assert(header->next == &header->backtrace->head || header->next->time < interval->start);
   }
@@ -367,19 +367,19 @@ static void interval_add(Interval* interval, Header* header)
   else
   {
     printf("Backtrace: %p: interval [%lu - %lu>(%lu); interval->n = %lu; added header %p[%lu] (&header->backtrace->head = %p",
-    	header->backtrace, interval->start, interval->end, interval->end - interval->start, interval->n + 1, header, header->time, &header->backtrace->head);
+            header->backtrace, interval->start, interval->end, interval->end - interval->start, interval->n + 1, header, header->time, &header->backtrace->head);
     Header* h = interval->first;
     int cnt = 0;
     for(;;)
     { 
       printf("; first");
       if (cnt > 0)
-	printf("->prev");
+        printf("->prev");
       if (cnt > 1)
-	printf("(x%d)", cnt);
+        printf("(x%d)", cnt);
       printf(" = %p", h);
       if (h == &header->backtrace->head)
-	break;
+        break;
       printf("[%lu]", h->time);
       h = h->prev;
       ++cnt;
@@ -434,7 +434,7 @@ static void interval_del(Interval* interval, Header* header, time_t life_time __
     {
       interval_unlink(header->backtrace, interval);
       if (header->backtrace->recording_interval == interval)
-	header->backtrace->recording_interval = NULL;
+        header->backtrace->recording_interval = NULL;
       (*memleak_libc_free)(interval);
     }
   }
@@ -791,50 +791,50 @@ void memleak_stats()
     int combine_count = 0;
     time_t combine_class = 0;
     size_t value_n = 0;
-    time_t last_ivc = 100;	// Big
+    time_t last_ivc = 100;        // Big
     while (interval)
     {
       time_t ivc = interval_class(interval->end - interval->start);
       if (LIKELY(ivc > combine_class))
       {
-	combine_class = ivc;
-	combine_count = 1;
+        combine_class = ivc;
+        combine_count = 1;
       }
       else if (++combine_count == 3 || UNLIKELY(ivc < combine_class))
       {
-	if (interval->prev->start == interval->end)
-	{
-	  // Combine interval->prev with interval.
-	  interval_combine(entry, interval);
-	  ivc = interval_class(interval->end - interval->start);
-	}
-	else
-	{
-	  // There is a hole between interval->end and interval->prev->start.
-	  // For example, interval is [50, 65> and interval->prev is [84, 100> (so ivc == 16).
-	  time_t new_end = interval->end + ivc;		// 65 + 16 = 81
-	  // Close the hole.
-	  interval->end = interval->prev->start;	// [50, 84>
-	  // If the hole is larger than the class of interval
-	  if (new_end < interval->prev->start)
-	  {
-	    // Then only gobble up that much.
-	    interval->end = new_end;			// [50, 81>
-	    // If the remaining hole is of a class smaller then the current class,
-	    // then add it to interval->prev.
-	    if (interval_class(interval->prev->start - interval->end) < ivc)
-	      interval->prev->start = interval->end;	// [81, 100>
-	  }
-	}
-	ivc = combine_class = interval_class(interval->end - interval->start);
-	combine_count = 1;
+        if (interval->prev->start == interval->end)
+        {
+          // Combine interval->prev with interval.
+          interval_combine(entry, interval);
+          ivc = interval_class(interval->end - interval->start);
+        }
+        else
+        {
+          // There is a hole between interval->end and interval->prev->start.
+          // For example, interval is [50, 65> and interval->prev is [84, 100> (so ivc == 16).
+          time_t new_end = interval->end + ivc;                // 65 + 16 = 81
+          // Close the hole.
+          interval->end = interval->prev->start;        // [50, 84>
+          // If the hole is larger than the class of interval
+          if (new_end < interval->prev->start)
+          {
+            // Then only gobble up that much.
+            interval->end = new_end;                        // [50, 81>
+            // If the remaining hole is of a class smaller then the current class,
+            // then add it to interval->prev.
+            if (interval_class(interval->prev->start - interval->end) < ivc)
+              interval->prev->start = interval->end;        // [81, 100>
+          }
+        }
+        ivc = combine_class = interval_class(interval->end - interval->start);
+        combine_count = 1;
       }
       // Determine the weight of this backtrace.
       if (interval->end)
       {
-	if (last_ivc < ivc)
-	  value_n *= 2;
-	value_n += interval->n;
+        if (last_ivc < ivc)
+          value_n *= 2;
+        value_n += interval->n;
       }
       // Next (older) interval.
       interval = interval->next;
@@ -875,8 +875,8 @@ void memleak_stats()
       // Skip not-so-interesting "leaks".
       if (interval->n > 1 && interval->end)
       {
-	++intervals;
-	has_interval = 1;
+        ++intervals;
+        has_interval = 1;
       }
       interval = interval->next;
     }
@@ -890,7 +890,7 @@ void memleak_stats()
   memset(helper, 0x13, intervals * sizeof(memleak_stats_helper));
 #endif
   intervals = 0;
-  count = 0;		// Print at most 4 backtraces.
+  count = 0;                // Print at most 4 backtraces.
   for(BacktraceEntry* entry = local_stats.first_entry_n; entry && count < stats.max_backtraces; entry = entry->next_n)
   {
     int has_interval = 0;
@@ -900,10 +900,10 @@ void memleak_stats()
       // Skip not-so-interesting "leaks".
       if (interval->n > 1 && interval->end)
       {
-	helper[intervals].entry = entry;
-	memcpy(&helper[intervals].interval, interval, sizeof(Interval));
-	++intervals;
-	has_interval = 1;
+        helper[intervals].entry = entry;
+        memcpy(&helper[intervals].interval, interval, sizeof(Interval));
+        ++intervals;
+        has_interval = 1;
       }
       interval = interval->next;
     }
@@ -1182,7 +1182,7 @@ void* memalign(size_t boundary, size_t size)
     size = 1;
   if (boundary < sizeof(void*))
   {
-    assert(((boundary - 1) & boundary) == 0);	// Must be a power of two.
+    assert(((boundary - 1) & boundary) == 0);        // Must be a power of two.
     boundary = sizeof(void*);
   }
   void* ret;
@@ -1227,7 +1227,7 @@ void interval_stop_recording()
       if (entry->recording_interval->n == 0)
       {
         interval_unlink(entry, entry->recording_interval);
-	(*memleak_libc_free)(entry->recording_interval);
+        (*memleak_libc_free)(entry->recording_interval);
       }
       entry->recording_interval = NULL;
     }
@@ -1254,10 +1254,10 @@ void interval_delete(time_t end)
     {
       Interval* prev = interval->prev;
       for (Header* header = interval->first; header && header->interval == interval; header = header->prev)
-	header->interval = NULL;
+        header->interval = NULL;
       interval_unlink(entry, interval);
       if (entry->recording_interval == interval)
-	entry->recording_interval = NULL;
+        entry->recording_interval = NULL;
       (*memleak_libc_free)(interval);
       interval = prev;
     }
@@ -1279,7 +1279,7 @@ void delete_intervals()
     {
       Interval* next = interval->next;
       for (Header* header = interval->first; header && header->interval == interval; header = header->prev)
-	header->interval = NULL;
+        header->interval = NULL;
       interval_unlink(entry, interval);
       (*memleak_libc_free)(interval);
       interval = next;
@@ -1308,7 +1308,7 @@ void interval_restart_recording()
       if (entry->recording_interval->n == 0)
       {
         interval_unlink(entry, entry->recording_interval);
-	(*memleak_libc_free)(entry->recording_interval);
+        (*memleak_libc_free)(entry->recording_interval);
       }
       entry->recording_interval = NULL;
     }
@@ -1350,8 +1350,8 @@ static void* monitor(void* dummy __attribute__((unused)))
     {
       if (errno == EADDRINUSE)
       {
-	unlink(sockname);
-	continue;
+        unlink(sockname);
+        continue;
       }
       fprintf(stderr, "Error binding socket: %s\n", strerror(errno));
       close(sockfd);
@@ -1396,224 +1396,224 @@ static void* monitor(void* dummy __attribute__((unused)))
       FD_ZERO(&rfds);
       FD_SET(sockfd, &rfds);
       if (fd > 0)
-	FD_SET(fd, &rfds);
+        FD_SET(fd, &rfds);
       //FD_SET(fd, &wfds);  set if we need writing.
       int n;
       if ((n = select(FD_SETSIZE, &rfds, &wfds, NULL, stats.recording? &timeout : NULL)) < 0)
       {
-	if (errno == EINTR)
-	{
-	  timeout = sleeptime;	// Man page says this is undefined after an error.
-	  continue;
-	}
-	perror("select");
-	close(sockfd);
-	unlink(sockname);
-	pthread_exit(0);
+        if (errno == EINTR)
+        {
+          timeout = sleeptime;        // Man page says this is undefined after an error.
+          continue;
+        }
+        perror("select");
+        close(sockfd);
+        unlink(sockname);
+        pthread_exit(0);
       }
-      if (n == 0)		// Timed out?
-	break;
+      if (n == 0)                // Timed out?
+        break;
       if (FD_ISSET(fd, &wfds))
       {
-	// write here.
+        // write here.
       }
       if (FD_ISSET(sockfd, &rfds))
       {
-	struct sockaddr_un cli_addr;
-	socklen_t clilen = sizeof(cli_addr);
-	fd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
-	if (fd < 0)
-	{
-	  perror("accept");
-	  close(sockfd);
-	  unlink(sockname);
-	  pthread_exit(0);
-	}
-	printf("libmemleak: Accepted a connection on \"%s\".\n", sockname);
-	if (fd > 0)
-	  my_write(fd, "PROMPT\n", 7);
+        struct sockaddr_un cli_addr;
+        socklen_t clilen = sizeof(cli_addr);
+        fd = accept(sockfd, (struct sockaddr*)&cli_addr, &clilen);
+        if (fd < 0)
+        {
+          perror("accept");
+          close(sockfd);
+          unlink(sockname);
+          pthread_exit(0);
+        }
+        printf("libmemleak: Accepted a connection on \"%s\".\n", sockname);
+        if (fd > 0)
+          my_write(fd, "PROMPT\n", 7);
       }
       if (FD_ISSET(fd, &rfds))
       {
-	static char buf[81];
-	int len = read(fd, buf, 80);
-	if (len == -1)
-	{
-	  fprintf(stderr, "read: %s\n", strerror(errno));
-	  close(sockfd);
-	  unlink(sockname);
-	  pthread_exit(0);
-	}
-	if (len == 0)
-	{
-	  printf("libmemleak: Closing socket \"%s\".\n", sockname);
-	  close(fd);
-	  fd = 0;
-	  break;
-	}
-	buf[len] = 0;
-	for(--len; len >= 0; --len)
-	{
-	  if (isspace(buf[len]))
-	    buf[len] = 0;
-	  else
-	  {
-	    ++len;
-	    break;
-	  }
-	}
-	if (len > 0)
-	{
-	  if (strcmp(buf, "help") == 0)
-	  {
-	    static char const* helptext[] = {
-	      "help     : Print this help.\n",
-	      "start    : Erase all intervals and start recording the first interval.\n",
-	      "stop     : Stop recording.\n",
-	      "restart  : Start a new interval. Keep, and possibly combine, previous intervals.\n",
-	      "delete   : Delete the oldest interval.\n",
+        static char buf[81];
+        int len = read(fd, buf, 80);
+        if (len == -1)
+        {
+          fprintf(stderr, "read: %s\n", strerror(errno));
+          close(sockfd);
+          unlink(sockname);
+          pthread_exit(0);
+        }
+        if (len == 0)
+        {
+          printf("libmemleak: Closing socket \"%s\".\n", sockname);
+          close(fd);
+          fd = 0;
+          break;
+        }
+        buf[len] = 0;
+        for(--len; len >= 0; --len)
+        {
+          if (isspace(buf[len]))
+            buf[len] = 0;
+          else
+          {
+            ++len;
+            break;
+          }
+        }
+        if (len > 0)
+        {
+          if (strcmp(buf, "help") == 0)
+          {
+            static char const* helptext[] = {
+              "help     : Print this help.\n",
+              "start    : Erase all intervals and start recording the first interval.\n",
+              "stop     : Stop recording.\n",
+              "restart  : Start a new interval. Keep, and possibly combine, previous intervals.\n",
+              "delete   : Delete the oldest interval.\n",
               "stats    : Print overview of backtrace with highest leak probability.\n",
-	      "stats N  : Automatically print stats every N seconds (use 0 to turn off).\n",
-	      "restart M: Automatically restart every N * M stats.\n",
-	      "list N   : When printing stats, print only the first N backtraces.\n",
-	      "dump N   : Print backtrace number N.\n"
-	    };
-	    for (size_t line = 0; line < sizeof(helptext) / sizeof(char*); ++line)
-	      my_write(fd, helptext[line], strlen(helptext[line]));
-	  }
-	  else if ((!stats.recording && strcmp(buf, "start") == 0) ||
-	           ( stats.recording && strcmp(buf, "restart") == 0))
-	  {
-	    timeout = sleeptime;
-	    count = -1;
-	    int len = snprintf(buf, sizeof(buf), "Auto restart interval is %d * %lu seconds.\n", restart_multiplier, sleeptime.tv_sec);
-	    if (len > 80)
-	    {
-	      buf[79] = '\n';
-	      len = 80;
-	    }
-	    my_write(fd, buf, len);
-	    if (fd > 0)
-	      my_write(fd, "PROMPT\n", 7);
-	    break;
-	  }
-	  else if (stats.recording && strcmp(buf, "stop") == 0)
-	  {
-	    interval_stop_recording();
-	    my_write(fd, "Stopped.\n", 9);
-	  }
-	  else if (strcmp(buf, "delete") == 0)
-	  {
+              "stats N  : Automatically print stats every N seconds (use 0 to turn off).\n",
+              "restart M: Automatically restart every N * M stats.\n",
+              "list N   : When printing stats, print only the first N backtraces.\n",
+              "dump N   : Print backtrace number N.\n"
+            };
+            for (size_t line = 0; line < sizeof(helptext) / sizeof(char*); ++line)
+              my_write(fd, helptext[line], strlen(helptext[line]));
+          }
+          else if ((!stats.recording && strcmp(buf, "start") == 0) ||
+                   ( stats.recording && strcmp(buf, "restart") == 0))
+          {
+            timeout = sleeptime;
+            count = -1;
+            int len = snprintf(buf, sizeof(buf), "Auto restart interval is %d * %lu seconds.\n", restart_multiplier, sleeptime.tv_sec);
+            if (len > 80)
+            {
+              buf[79] = '\n';
+              len = 80;
+            }
+            my_write(fd, buf, len);
+            if (fd > 0)
+              my_write(fd, "PROMPT\n", 7);
+            break;
+          }
+          else if (stats.recording && strcmp(buf, "stop") == 0)
+          {
+            interval_stop_recording();
+            my_write(fd, "Stopped.\n", 9);
+          }
+          else if (strcmp(buf, "delete") == 0)
+          {
             int len = snprintf(buf, sizeof(buf), "Deleting all intervals that end before %lu seconds since application start.\n", stats.oldest_interval_end);
-	    if (len > 80)
-	    {
-	      buf[79] = '\n';
-	      len = 80;
-	    }
-	    my_write(fd, buf, len);
-	    interval_delete(stats.oldest_interval_end);
-	  }
-	  else if (strcmp(buf, "stats") == 0)
-	  {
-	    if (fd > 0)
-	      my_write(fd, "PROMPT\n", 7);
-	    break;
-	  }
-	  else if (strncmp(buf, "stats ", 6) == 0)
-	  {
-	    int arg = atoi(buf + 6);
-	    int len;
-	    if (arg >= 1)
-	    {
-	      sleeptime.tv_sec = arg;
-	      len = snprintf(buf, sizeof(buf), "Printing memory statistics every %lu seconds.\n", sleeptime.tv_sec);
-	    }
-	    else
-	    {
-	      len = snprintf(buf, sizeof(buf), "Interval between printing of stats must be at least 1 second.\n");
-	    }
-	    if (len > 80)
-	    {
-	      buf[79] = '\n';
-	      len = 80;
-	    }
-	    my_write(fd, buf, len);
-	  }
-	  else if (strncmp(buf, "restart ", 8) == 0)
-	  {
-	    int arg = atoi(buf + 8);
-	    int len;
-	    if (arg >= 2)
-	    {
-	      restart_multiplier = arg;
-	      len = snprintf(buf, sizeof(buf), "Restart multiplier set to %d.\n", restart_multiplier);
-	    }
-	    else
-	    {
-	      len = snprintf(buf, sizeof(buf), "Restart multiplier must be at least 2.\n");
-	    }
-	    if (len > 80)
-	    {
-	      buf[79] = '\n';
-	      len = 80;
-	    }
-	    my_write(fd, buf, len);
-	  }
-	  else if (strncmp(buf, "list ", 5) == 0)
-	  {
-	    int arg = atoi(buf + 5);
-	    int len;
-	    if (arg >= 1)
-	    {
-	      stats.max_backtraces = arg;
-	      if (stats.max_backtraces == 1)
-		len = snprintf(buf, sizeof(buf), "Now printing only the first backtrace.\n");
-	      else
-		len = snprintf(buf, sizeof(buf), "Now printing the first %d backtraces.\n", stats.max_backtraces);
-	    }
-	    else
-	    {
-	      len = snprintf(buf, sizeof(buf), "Argument of list must be at least 1.\n");
-	    }
-	    if (len > 80)
-	    {
-	      buf[79] = '\n';
-	      len = 80;
-	    }
-	    my_write(fd, buf, len);
-	  }
-	  else if (strncmp(buf, "dump ", 5) == 0)
-	  {
-	    int arg = atoi(buf + 5);
-	    pthread_mutex_lock(&memleak_mutex);
-
-	    BacktraceEntry* entry = stats.first_entry_n;
-	    while (entry && entry->backtrace_nr != arg)
-	      entry = entry->next_n;
-
-	    pthread_mutex_unlock(&memleak_mutex);
-	    if (entry)
-	    {
-	      FILE* fp = fdopen(fd, "a");
-	      addr2line_print(fp, entry->ptr, entry->backtrace_size);
-	      fflush(fp);
-	    }
+            if (len > 80)
+            {
+              buf[79] = '\n';
+              len = 80;
+            }
+            my_write(fd, buf, len);
+            interval_delete(stats.oldest_interval_end);
+          }
+          else if (strcmp(buf, "stats") == 0)
+          {
+            if (fd > 0)
+              my_write(fd, "PROMPT\n", 7);
+            break;
+          }
+          else if (strncmp(buf, "stats ", 6) == 0)
+          {
+            int arg = atoi(buf + 6);
+            int len;
+            if (arg >= 1)
+            {
+              sleeptime.tv_sec = arg;
+              len = snprintf(buf, sizeof(buf), "Printing memory statistics every %lu seconds.\n", sleeptime.tv_sec);
+            }
             else
-	    {
-	      int len = snprintf(buf, sizeof(buf), "Backtrace %d doesn't exist.\n", arg);
-	      if (len > 80)
-	      {
-		buf[79] = '\n';
-		len = 80;
-	      }
-	      my_write(fd, buf, len);
-	    }
-	  }
-	  else
-	    my_write(fd, "Ignored.\n", 9);
-	}
-	if (fd > 0)
-	  my_write(fd, "PROMPT\n", 7);
+            {
+              len = snprintf(buf, sizeof(buf), "Interval between printing of stats must be at least 1 second.\n");
+            }
+            if (len > 80)
+            {
+              buf[79] = '\n';
+              len = 80;
+            }
+            my_write(fd, buf, len);
+          }
+          else if (strncmp(buf, "restart ", 8) == 0)
+          {
+            int arg = atoi(buf + 8);
+            int len;
+            if (arg >= 2)
+            {
+              restart_multiplier = arg;
+              len = snprintf(buf, sizeof(buf), "Restart multiplier set to %d.\n", restart_multiplier);
+            }
+            else
+            {
+              len = snprintf(buf, sizeof(buf), "Restart multiplier must be at least 2.\n");
+            }
+            if (len > 80)
+            {
+              buf[79] = '\n';
+              len = 80;
+            }
+            my_write(fd, buf, len);
+          }
+          else if (strncmp(buf, "list ", 5) == 0)
+          {
+            int arg = atoi(buf + 5);
+            int len;
+            if (arg >= 1)
+            {
+              stats.max_backtraces = arg;
+              if (stats.max_backtraces == 1)
+                len = snprintf(buf, sizeof(buf), "Now printing only the first backtrace.\n");
+              else
+                len = snprintf(buf, sizeof(buf), "Now printing the first %d backtraces.\n", stats.max_backtraces);
+            }
+            else
+            {
+              len = snprintf(buf, sizeof(buf), "Argument of list must be at least 1.\n");
+            }
+            if (len > 80)
+            {
+              buf[79] = '\n';
+              len = 80;
+            }
+            my_write(fd, buf, len);
+          }
+          else if (strncmp(buf, "dump ", 5) == 0)
+          {
+            int arg = atoi(buf + 5);
+            pthread_mutex_lock(&memleak_mutex);
+
+            BacktraceEntry* entry = stats.first_entry_n;
+            while (entry && entry->backtrace_nr != arg)
+              entry = entry->next_n;
+
+            pthread_mutex_unlock(&memleak_mutex);
+            if (entry)
+            {
+              FILE* fp = fdopen(fd, "a");
+              addr2line_print(fp, entry->ptr, entry->backtrace_size);
+              fflush(fp);
+            }
+            else
+            {
+              int len = snprintf(buf, sizeof(buf), "Backtrace %d doesn't exist.\n", arg);
+              if (len > 80)
+              {
+                buf[79] = '\n';
+                len = 80;
+              }
+              my_write(fd, buf, len);
+            }
+          }
+          else
+            my_write(fd, "Ignored.\n", 9);
+        }
+        if (fd > 0)
+          my_write(fd, "PROMPT\n", 7);
       }
     }
     ++count;
@@ -1666,7 +1666,7 @@ static void __attribute__ ((unused)) check_backtrace_headers(BacktraceEntry* ent
     assert(h->next->prev == h);
     assert(h->prev->next == h);
     assert(h->backtrace == entry);
-    assert(h->time <= t);		// Every next Header is older.
+    assert(h->time <= t);                // Every next Header is older.
     t = h->time;
     assert(count < entry->allocations);
     ++count;
@@ -1693,11 +1693,11 @@ static void __attribute__ ((unused)) check_interval_headers(BacktraceEntry* entr
       assert(h->time <= is || entry->recording_interval);
       if (h->time >= is && h->time < ie)
       {
-	fh = h;
-	++count;
+        fh = h;
+        ++count;
       }
       if (h->time == is)
-	++count_equal;
+        ++count_equal;
     }
     assert((!entry->recording_interval && count == count_equal) || (entry->recording_interval && entry->recording_interval->n == count));
     // entry->recording_interval->first points to the oldest allocation that falls into the interval.
