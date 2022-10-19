@@ -303,14 +303,14 @@ static time_t application_start;
 
 static time_t interval_start;
 
-void interval_print(Interval const* interval)
+void interval_print(Interval const* interval, FILE* fp)
 {
-  printf("[%4lu,", interval->start);
+  fprintf(fp, "[%4lu,", interval->start);
   if (interval->end)
-    printf("%4lu>(%4lu)", interval->end, interval->end - interval->start);
+    fprintf(fp, "%4lu>(%4lu)", interval->end, interval->end - interval->start);
   else
-    printf("now");
-  printf(": %5zu allocations (%6zu total, %4.1f%%), size %7zu; %6.2f allocations/s, %lu bytes/s\n",
+    fprintf(fp, "now");
+  fprintf(fp, ": %5zu allocations (%6zu total, %4.1f%%), size %7zu; %6.2f allocations/s, %lu bytes/s\n",
       interval->n, interval->total_n, (100.0 * interval->n / interval->total_n), interval->size,
       (double)interval->n / (interval->end - interval->start),
       interval->size / (interval->end - interval->start));
@@ -765,7 +765,7 @@ time_t interval_class(time_t interval)
   return v;
 }
 
-void memleak_stats()
+void memleak_stats_fp(FILE* fp)
 {
   // Do not record memory allocated from this function.
   inside_memleak_stats = 1;
@@ -928,7 +928,7 @@ void memleak_stats()
     totm /= 10;
     ++count2;
   }
-  fprintf(stdout, "%s: Now: %lu; \tBacktraces: %zu; \tallocations: %zu; \ttotal memory: %s bytes.\n",
+  fprintf(fp, "%s: Now: %lu; \tBacktraces: %zu; \tallocations: %zu; \ttotal memory: %s bytes.\n",
       appname, now, local_stats.backtraces, local_stats.allocations, p);
 
   // Print all intervals and mark the backtrace entries as needing printing.
@@ -936,13 +936,13 @@ void memleak_stats()
   for(int i = 0; i < intervals; ++i)
   {
     helper[i].entry->need_printing = 1;
-    fprintf(stdout, " backtrace %d (value_n: %6.2f); ", helper[i].entry->backtrace_nr, helper[i].entry->value_n);
-    interval_print(&helper[i].interval);
+    fprintf(fp, " backtrace %d (value_n: %6.2f); ", helper[i].entry->backtrace_nr, helper[i].entry->value_n);
+    interval_print(&helper[i].interval, fp);
     if (helper[i].interval.end < oldest_interval_end)
       oldest_interval_end = helper[i].interval.end;
   }
   (*memleak_libc_free)(helper);
-  fflush(stdout);
+  fflush(fp);
 
   // LOCK ADMINISTRATIVE DATA
   pthread_mutex_lock(&memleak_mutex);
@@ -986,8 +986,9 @@ void memleak_stats()
   {
     if (e && (e % 100) == 0)
     {
-      fprintf(stdout, "%d backtraces to go (%3.1f %% cache hits)...\n", e, 100.0 * frame_cache_stats());
-      fflush(stdout);
+      // this trace is very annoying when there's a lot of backtraces
+      // fprintf(stdout, "%d backtraces to go (%3.1f %% cache hits)...\n", e, 100.0 * frame_cache_stats());
+      fflush(fp);
     }
     BacktraceEntry* entry = &backtraces[e];
     if (entry->allocations == 0)
@@ -998,11 +999,16 @@ void memleak_stats()
   }
   fclose(fbacktraces);
   if (entries > 0)
-    fprintf(stdout, "libmemleak: Wrote %d new backtraces.\n", entries);
+    fprintf(fp, "libmemleak: Wrote %d new backtraces.\n", entries);
   (*memleak_libc_free)(backtraces);
 
   // Done.
   inside_memleak_stats = 0;
+}
+
+void memleak_stats()
+{
+  memleak_stats_fp(stdout);
 }
 
 static void memleak_final_stats() {
@@ -1322,6 +1328,7 @@ static int quit = 0;
 static void terminate();
 static int sockfd;
 static int fd = 0;
+static FILE* fdfp = NULL; // `fp` associated to `fd`
 static char const* sockname;
 
 static void* monitor(void* dummy __attribute__((unused)))
@@ -1430,8 +1437,10 @@ static void* monitor(void* dummy __attribute__((unused)))
           pthread_exit(0);
         }
         printf("libmemleak: Accepted a connection on \"%s\".\n", sockname);
-        if (fd > 0)
+        if (fd > 0) {
           my_write(fd, "PROMPT\n", 7);
+          fdfp = fdopen(fd, "w+");
+        }
       }
       if (FD_ISSET(fd, &rfds))
       {
@@ -1447,7 +1456,9 @@ static void* monitor(void* dummy __attribute__((unused)))
         if (len == 0)
         {
           printf("libmemleak: Closing socket \"%s\".\n", sockname);
-          close(fd);
+          //close(fd);
+          fclose(fdfp);
+          fdfp = NULL;
           fd = 0;
           break;
         }
@@ -1515,8 +1526,11 @@ static void* monitor(void* dummy __attribute__((unused)))
           }
           else if (strcmp(buf, "stats") == 0)
           {
-            if (fd > 0)
+            if (fd > 0 && fdfp) {
+              memleak_stats_fp(fdfp);
+              fflush(fdfp);
               my_write(fd, "PROMPT\n", 7);
+            }
             break;
           }
           else if (strncmp(buf, "stats ", 6) == 0)
