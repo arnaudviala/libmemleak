@@ -898,7 +898,10 @@ void memleak_stats_fp(FILE* fp)
   }
 
   // Make a copy of all the Interval objects that we want to print.
-  memleak_stats_helper* helper = (*memleak_libc_malloc)(intervals * sizeof(memleak_stats_helper));
+  memleak_stats_helper* helper = NULL;
+  if (intervals>0) {
+    helper = (*memleak_libc_malloc)(intervals * sizeof(memleak_stats_helper));
+  }
 #ifdef DEBUG_EXPENSIVE
   memset(helper, 0x13, intervals * sizeof(memleak_stats_helper));
 #endif
@@ -954,7 +957,7 @@ void memleak_stats_fp(FILE* fp)
     if (helper[i].interval.end < oldest_interval_end)
       oldest_interval_end = helper[i].interval.end;
   }
-  (*memleak_libc_free)(helper);
+  if (helper) (*memleak_libc_free)(helper);
   fflush(fp);
 
   // LOCK ADMINISTRATIVE DATA
