@@ -1,0 +1,15 @@
+/* This `config.h.cin` is intended to be a replacement for `config.h.in`
+ * to be processed by `cmake`. We only need a subset of all the definitions.
+ */
+
+#cmakedefine PACKAGE "@PACKAGE@"
+#cmakedefine PACKAGE_VERSION "@PACKAGE_VERSION@"
+#cmakedefine TARGET "@TARGET@"
+
+/* Define when bfd_error_handler_type uses a printf style rather than vprintf
+   style argument passing.
+   Note: CMakeLists.txt files are currently not checking that. */
+#cmakedefine HAVE_PRINTF_STYLE_BFD_ERROR_HANDLER_TYPE @HAVE_PRINTF_STYLE_BFD_ERROR_HANDLER_TYPE@
+
+#cmakedefine SIZEOF_TIME_T @SIZEOF_TIME_T@
+
