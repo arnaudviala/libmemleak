@@ -3,7 +3,14 @@
 #export CFLAGS="-funwind-tables -fasynchronous-unwind-tables"
 #export LDFLAGS="-funwind-tables -fasynchronous-unwind-tables"
 
-./autogen.sh
+# autogen.sh is broken, it's downloading the latest version
+# of author's `cwm4` tools which are not necessarily compatible
+# with what we have
+# ./autogen.sh
+# Do the following manually: (once?)
+# > git submodule update --init
+# > $PWD/cwm4/scripts/generate_submodules_m4.sh
+# > $PWD/cwm4/scripts/bootstrap.sh
 
 TARGET=`gcc -dumpmachine`
 
