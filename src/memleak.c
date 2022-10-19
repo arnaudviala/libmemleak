@@ -609,6 +609,19 @@ static void update_entry_del(Header* header)
   --(bp->allocations);
 }
 
+static int __getrealtime(struct timeval *restrict tv,
+                        struct timezone *restrict tz __attribute__((unused)))
+{
+  struct timespec spec;
+  int i = clock_gettime(CLOCK_REALTIME, &spec);
+  if (i == 0) {
+    tv->tv_sec = spec.tv_sec;
+    tv->tv_usec = spec.tv_nsec;
+  }
+  return i;
+}
+#define gettimeofday __getrealtime
+
 static void update_interval_del(Header* header)
 {
   Interval* interval = header->interval;
