@@ -1422,7 +1422,8 @@ static void* monitor(void* dummy __attribute__((unused)))
         FD_SET(fd, &rfds);
       //FD_SET(fd, &wfds);  set if we need writing.
       int n;
-      if ((n = select(FD_SETSIZE, &rfds, &wfds, NULL, stats.recording? &timeout : NULL)) < 0)
+      n = select(FD_SETSIZE, &rfds, &wfds, NULL, &timeout);
+      if (n < 0)
       {
         if (errno == EINTR)
         {
@@ -1647,11 +1648,13 @@ static void* monitor(void* dummy __attribute__((unused)))
       }
     }
     ++count;
-    if (count % restart_multiplier == 0)
+    if (stats.recording
+      && (count % restart_multiplier) == 0)
       interval_restart_recording();
     if (quit)
       pthread_exit(0);
-    memleak_stats();
+    if (stats.recording)
+      memleak_stats();
   }
   return NULL;
 }
