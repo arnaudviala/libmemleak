@@ -782,6 +782,7 @@ void memleak_stats()
   Stats local_stats;
   memcpy(&local_stats, &stats, sizeof(Stats));
 
+#if !defined(NO_COMBINE_INTERVAL)
   // Run over all backtraces and their intervals and combine intervals as needed.
   // Determine the sorting value of each backtrace from it's Intervals.
   for(BacktraceEntry* entry = stats.first_entry; entry; entry = entry->next)
@@ -841,6 +842,7 @@ void memleak_stats()
     }
     entry->value_n = value_n;
   }
+#endif // !defined(NO_COMBINE_INTERVAL)
 
   // Remember what is currently the first node.
   BacktraceEntry* first_node_n = stats.first_entry_n;

@@ -4,6 +4,7 @@ export CFLAGS="-funwind-tables -fasynchronous-unwind-tables"
 export LDFLAGS="-funwind-tables -fasynchronous-unwind-tables"
 
 export CFLAGS="-DWITHOUT_READLINE"
+export CLFAGS="-DNO_COMBINE_INTERVAL"
 export CFLAGS="-DWITHOUT_BFD"
 
 # autogen.sh is broken, it's downloading the latest version
