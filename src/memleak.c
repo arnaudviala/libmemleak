@@ -1514,6 +1514,9 @@ static void* monitor(void* dummy __attribute__((unused)))
           {
             timeout = sleeptime;
             count = -1;
+            if (strcmp(buf, "start") == 0) {
+              interval_start_recording();
+            }
             int len = snprintf(buf, sizeof(buf), "Auto restart interval is %d * %lu seconds.\n", restart_multiplier, sleeptime.tv_sec);
             if (len > 80)
             {
@@ -1648,7 +1651,8 @@ static void* monitor(void* dummy __attribute__((unused)))
       }
     }
     ++count;
-    if (stats.recording
+    if (count > 0
+      && stats.recording
       && (count % restart_multiplier) == 0)
       interval_restart_recording();
     if (quit)
