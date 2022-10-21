@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
+#include <assert.h>
+#include <dirent.h>
 
 #if !defined(WITHOUT_READLINE)
 #include <readline/readline.h>
@@ -71,9 +73,107 @@ char* rl_gets()
 }
 #endif
 
+static const char * lookfor_sockname(const char * path, const char * prefix)
+{
+  static char found[512] = ""; // static memory on the heap, safe to return
+  int count = 0;
+  struct dirent *dent;
+  int prefix_len = strlen(prefix);
+  DIR *dir = opendir(path);
+  if(dir!=NULL)
+  {
+    while((dent=readdir(dir))!=NULL)
+    {
+      if (0 == strncmp(dent->d_name, prefix, prefix_len))
+      {
+        if (count == 0) // first one
+        {
+          // make a copy of the entry
+          snprintf(found, sizeof(found), "%s/%s", path, dent->d_name);
+        }
+        count++;
+      }
+    }
+  }
+  closedir(dir);
+
+  if (count == 1) // OK
+  {
+    fprintf(stderr, "Found memleak socket '%s'\n", found);
+  }
+  else if (count == 0)
+  {
+    fprintf(stderr, "Unable to find a memleak socket\n");
+  }
+  else
+  {
+    fprintf(stderr, "Found too many memleak sockets, unable to disambiguate\n");
+    found[0] = '\0';
+  }
+
+  // return the found sockname only if there is one
+  return count == 1 ? found : NULL;
+}
+
+static const char * detect_sockname(const char * hint)
+{
+  // if no hint is provided:
+  //   let's try the LIBMEMLEAK_SOCKNAME envvar
+  //   or try to find a unique sockname (we cannot disambiguate if there's several)
+  // if a hint is provided:
+  //   if the hint is a number, we'll prepend the prefix
+  //   we return the hint
+  const char * result = NULL;
+  const char * sock_dir = "/tmp";
+  const char * sock_prefix = "memleak-sock-";
+  if (!hint)
+  {
+    result = getenv("LIBMEMLEAK_SOCKNAME");
+    if (!result)
+    {
+      result = lookfor_sockname(sock_dir, sock_prefix);
+    }
+  }
+  else
+  {
+    char * end = NULL;
+    long int pid = strtol(hint, &end, 10);
+    if (pid && end && *end == '\0') // valid number
+    {
+      static char s[256]; // static var on the heap (always accessible)
+      snprintf(s, sizeof(s), "%s/%s%ld", sock_dir, sock_prefix, pid);
+      result = s;
+    }
+  }
+  return result ? result : hint;
+}
+
+static void parse_args(int argc, char* argv[], const char**out_sockname)
+{
+  assert(out_sockname);
+  int a;
+  for(a=1 ; a<argc ; a++)
+  {
+    if (strcmp(argv[a], "-p") == 0)
+    {
+      if (a == argc-1)
+      {
+        fprintf(stderr, "Missing socket path with -p option\n");
+      }
+      else
+      {
+        a++; // shift params
+        *out_sockname = argv[a];
+      }
+    }
+  }
+}
+
 int main(int argc, char* argv[])
 {
-  UNUSED(argc);
+  char const* sockname = NULL;
+
+  parse_args(argc, argv, &sockname);
 
   int sockfd, servlen;
   struct sockaddr_un serv_addr;
@@ -81,9 +181,9 @@ int main(int argc, char* argv[])
 
   memset((char*)&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sun_family = AF_UNIX;
-  char const* sockname = getenv("LIBMEMLEAK_SOCKNAME");
+  sockname = detect_sockname(sockname);
   if (!sockname)
-    sockname = "memleak_sock";
+    sockname = "memleak_sock"; // old format for compatibility with old libs
   strcpy(serv_addr.sun_path, sockname);
   servlen = strlen(serv_addr.sun_path) + sizeof(serv_addr.sun_family);
   if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)

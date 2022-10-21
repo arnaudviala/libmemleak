@@ -1347,6 +1347,20 @@ static int fd = 0;
 static FILE* fdfp = NULL; // `fp` associated to `fd`
 static char const* sockname;
 
+static const char * get_sockname()
+{
+  const char * sockname = getenv("LIBMEMLEAK_SOCKNAME");
+  if (!sockname)
+  {
+    // declare the following static so it's not allocated on the stack
+    static char s[256];
+    pid_t pid = getpid();
+    snprintf(s, sizeof(s), "/tmp/memleak-sock-%d", (int)pid);
+    sockname = s;
+  }
+  return sockname;
+}
+
 static void* monitor(void* dummy __attribute__((unused)))
 {
   if (strcmp(appname, "SLPlugin") == 0)
@@ -1358,9 +1372,7 @@ static void* monitor(void* dummy __attribute__((unused)))
     fprintf(stderr, "Failed to open AF_UNIX socket: %s\n", strerror(errno));
     pthread_exit(0);
   }
-  sockname = getenv("LIBMEMLEAK_SOCKNAME");
-  if (!sockname)
-    sockname = "memleak_sock";
+  sockname = get_sockname();
   printf("sockname = \"%s\"\n", sockname);
   struct sockaddr_un serv_addr;
   memset(&serv_addr, 0, sizeof(serv_addr));
