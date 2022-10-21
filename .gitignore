@@ -12,5 +12,7 @@ install-sh
 ltmain.sh
 missing
 m4
+build/
+staging/
 build-*/
 staging-*/
