@@ -7,6 +7,13 @@ add_compile_options(-funwind-tables -fasynchronous-unwind-tables -fno-omit-frame
 # Let's stop compilation on all warnings
 add_compile_options(-Wall -Wextra -Werror)
 
+# Option to enable the workaround to avoid a crash after combining intervals.
+# /!\ Libmemleak functionality - ability to surface the leaking backtrace - is
+# affected by this option. But it's better than a crash.
+if (NO_COMBINE_INTERVAL)
+add_definitions(-DNO_COMBINE_INTERVAL)
+endif()
+
 #
 # `libmemleak` library
 #
