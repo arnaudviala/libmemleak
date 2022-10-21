@@ -13,16 +13,21 @@ else()
     endif()
 endif()
 
-# The following block determines if bfd_error_handler_type is defined in bfd.h
+# The following block determines if bfd_error_handler_type is defined in bfd*.h
 # as a variadic function. This is a readaptation of cwm4's CW_TYPE_BFD_ERROR_HANDLER_TYPE.
 find_file(__BFD_HEADER bfd.h)
-SET(GREP_ARGS -o typedef[^\\*]\*\\*bfd_error_handler_type\)[^.]\*\.\.\.\) ${__BFD_HEADER})
+find_file(__BFD32_HEADER bfd-32.h)
+find_file(__BFD64_HEADER bfd-64.h)
 EXECUTE_PROCESS(
-            COMMAND
-            grep ${GREP_ARGS}
+            # All those commands are executed and piped to each other
+            COMMAND grep bfd_error_handler_type ${__BFD_HEADER} ${__BFD32_HEADER} ${__BFD64_HEADER}
+            COMMAND grep typedef
+            COMMAND grep va_list
             OUTPUT_VARIABLE GREP_RESULTS
             ERROR_VARIABLE ERR)
 if (GREP_RESULTS)
+    message(STATUS "bfd_error_handler_type is vprintf style (with a va_list parameter)")
+else()
     message(STATUS "bfd_error_handler_type is printf style")
     set(HAVE_PRINTF_STYLE_BFD_ERROR_HANDLER_TYPE "1" PARENT_SCOPE)
 endif()
