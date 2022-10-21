@@ -4,6 +4,9 @@ include(packages-deps.cmake)
 # and with the following flags that will allow to have a nice backtrace()
 add_compile_options(-funwind-tables -fasynchronous-unwind-tables -fno-omit-frame-pointer -U_FORTIFY_SOURCE -O0)
 
+# Let's stop compilation on all warnings
+add_compile_options(-Wall -Wextra -Werror)
+
 #
 # `libmemleak` library
 #

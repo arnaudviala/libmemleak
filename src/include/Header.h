@@ -24,6 +24,7 @@
 #define HEADER_H
 
 #include <stdint.h>
+#include <time.h>   // for time_t
 
 struct BacktraceEntry;
 struct Interval;
@@ -39,7 +40,7 @@ __attribute__((__packed__)) struct Header
   struct Header* prev;                          //!< Previous allocation with the same backtrace.
   struct Header* next;                          //!< Next allocation with the same backtrace.
   intptr_t size;                                //!< Size of the allocation (minus Header).
-  intptr_t time;                                //!< Time at which the allocation was made (in seconds UTC).
+  time_t time;                                  //!< Time at which the allocation was made (in seconds UTC).
   intptr_t posix_memalign_offset;               //!< The offset in case of a posix_memalign.
   struct BacktraceEntry* backtrace;             //!< Pointer to the backtrace that this allocation belongs to.
   struct Interval* interval;                    //!< Pointer to interval this allocation was made in, if any.

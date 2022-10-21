@@ -16,6 +16,7 @@ build_product()
 {
     local platform=$1
     local cmake_opts=
+    echo -e "#\n#\n#  Building for $platform\n#\n#"
     case $platform in
     "mt8518"|"ares"|"vulcan"|"theia")
         echo "Sourcing the Yocto environment for $platform..."

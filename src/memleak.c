@@ -1009,7 +1009,7 @@ void memleak_stats_fp(FILE* fp)
     BacktraceEntry* entry = &backtraces[e];
     if (entry->allocations == 0)
       continue; // libmemleak has conserved the backtrace, but it's not leaking
-    fprintf(fbacktraces, "Backtrace %d: (%d allocations, total %d bytes)\n", entry->backtrace_nr, entry->allocations, entry->allocations_size);
+    fprintf(fbacktraces, "Backtrace %d: (%d allocations, total %zu bytes)\n", entry->backtrace_nr, entry->allocations, entry->allocations_size);
     addr2line_print(fbacktraces, entry->ptr, entry->backtrace_size);
     fprintf(fbacktraces, "\n");
   }

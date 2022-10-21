@@ -36,7 +36,6 @@ void addr2line_init()
 
 void addr2line_print(FILE* fbacktraces, void** backtrace, size_t backtrace_size)
 {
-  size_t s=0;
   fprintf(fbacktraces, "Backtrace:\n");
   for(size_t s=0; s<backtrace_size ; s++)
   {

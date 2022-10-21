@@ -26,7 +26,7 @@ void show_backtrace()
     void * backtrace_ptr[BT_MAX];
     size_t backtrace_size = backtrace(backtrace_ptr, BT_MAX);
     size_t p;
-    printf("---- [sz=%d]\n", backtrace_size);
+    printf("---- [sz=%zu]\n", backtrace_size);
     for(p=0 ; p<backtrace_size ; p++)
     {
         printf("backtrace[%zu]=%p\n", p, backtrace_ptr[p]);
@@ -65,8 +65,10 @@ void footer()
     printf("+-----------------------------\n");
 }
 
-int main(int argc, char* argv)
+int main(int argc, char* argv[])
 {
+    (void)argc; (void)argv; // unused
+
     header("malloc()");
     char* ptr = (char*)malloc(1024);
     printf("malloc() returned %p\n", ptr);
