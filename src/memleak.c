@@ -292,8 +292,10 @@ struct Stats {
 
 typedef struct Stats Stats;
 
+#define TIME_UNDETERMINED   ((time_t)-1)
+
 static Stats stats;
-static time_t application_start;
+static time_t application_start = TIME_UNDETERMINED;
 
 //---------------------------------------------------------------------------------------------
 // Header and Interval
@@ -613,7 +615,7 @@ static int __getrealtime(struct timeval *restrict tv,
                         struct timezone *restrict tz __attribute__((unused)))
 {
   struct timespec spec;
-  int i = clock_gettime(CLOCK_REALTIME, &spec);
+  int i = clock_gettime(CLOCK_MONOTONIC, &spec);
   if (i == 0) {
     tv->tv_sec = spec.tv_sec;
     tv->tv_usec = spec.tv_nsec;
@@ -708,7 +710,11 @@ static void add(Header* header, size_t size, void** backtrace, int backtrace_siz
   stats.total_memory += size;
   ++stats.allocations;
   header->interval = NULL;
-  header->time = tm.tv_sec - application_start;
+  // if application_start is undetermined, this could mean we're before init()
+  // in this case, we simply set time=0
+  header->time = (application_start != TIME_UNDETERMINED)
+               ? tm.tv_sec - application_start
+               : 0;
   header->magic_number = MAGIC_NUMBER;
 #ifdef DEBUG_EXPENSIVE
   check_backtrace_headers(header->backtrace);
@@ -1759,12 +1765,12 @@ static void __attribute__ ((unused)) check_interval_headers(BacktraceEntry* entr
   Interval* interval = entry->intervals;
   assert(!interval || !interval->prev);
   assert(!entry->recording_interval || entry->recording_interval == interval);
-  time_t prev_start = (time_t)-1;
+  time_t prev_start = TIME_UNDETERMINED;
   while(interval)
   {
     assert(!entry->recording_interval || interval == entry->recording_interval || interval->end);
     assert(interval != entry->recording_interval || interval == entry->intervals);
-    assert((!interval->end || interval->start < interval->end) && (prev_start == -1 || interval->end <= prev_start));
+    assert((!interval->end || interval->start < interval->end) && (prev_start == TIME_UNDETERMINED || interval->end <= prev_start));
     Interval* prev = interval;
     prev_start = prev->start;
     interval = interval->next;
