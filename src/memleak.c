@@ -1579,7 +1579,7 @@ static void* monitor(void* dummy __attribute__((unused)))
               "stats N  : Automatically print stats every N seconds (use 0 to turn off).\n",
               "restart M: Automatically restart every N * M stats.\n",
               "list N   : When printing stats, print only the first N backtraces.\n",
-              "dump N   : Print backtrace number N.\n"
+              "dump N   : Print backtrace number N.  (alias 'bt N')\n",
             };
             for (size_t line = 0; line < sizeof(helptext) / sizeof(char*); ++line)
               my_write(fd, helptext[line], strlen(helptext[line]));
@@ -1691,9 +1691,11 @@ static void* monitor(void* dummy __attribute__((unused)))
             }
             my_write(fd, buf, len);
           }
-          else if (strncmp(buf, "dump ", 5) == 0)
+          else if (strncmp(buf, "dump ", 5) == 0
+                || strncmp(buf, "bt ", 5) == 0)
           {
-            int arg = atoi(buf + 5);
+            char * space = strchr(buf, ' ');
+            int arg = atoi(space);
             pthread_mutex_lock(&memleak_mutex);
 
             BacktraceEntry* entry = stats.first_entry_n;
