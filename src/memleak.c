@@ -1126,6 +1126,7 @@ void memleak_stats_fp(FILE* fp)
   // UNLOCK ADMINISTRATIVE DATA
   pthread_mutex_unlock(&memleak_mutex);
 
+#if 0 // disable saving to file
   // Create or append 'memleak_backtraces' file.
   static int first_time = 1;
   FILE* fbacktraces = fopen("memleak_backtraces", first_time ? "w": "a");
@@ -1151,6 +1152,7 @@ void memleak_stats_fp(FILE* fp)
     fprintf(fbacktraces, "\n");
   }
   fclose(fbacktraces);
+#endif // disable saving to file
   if (entries > 0)
     fprintf(fp, "libmemleak: Wrote %d new backtraces.\n", entries);
   (*memleak_libc_free)(backtraces);
