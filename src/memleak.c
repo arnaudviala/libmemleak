@@ -103,13 +103,13 @@ static void print_size(size_t size)
 static void print_ptr(void* ptrin)
 {
   my_write(1, "0x", 2);
-  intptr_t size = (intptr_t)ptrin;
+  size_t size = (size_t)ptrin;  // previous code used `intptr_t` but I think the signedness created a crash
   char buf[32];
   char* ptr = &buf[31];
   *ptr-- = 0;
   do
   {
-    int d = size & 0xf;
+    unsigned char d = (unsigned char)size & 0xf;
     if (d < 10)
       *ptr-- = '0' + d;
     else
