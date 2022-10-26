@@ -722,6 +722,8 @@ static pthread_t monitor_thread;
 
 static __thread int inside_memleak_init = 0;
 
+static __thread int inside_valgrind = 0;
+
 static void init()
 {
   inside_memleak_init = 1;
@@ -740,6 +742,15 @@ static void init()
   else
     appname = exename;
   //printf("exename = \"%s\"\n", exename);
+  if (strstr(exename, "valgrind") != NULL)
+  {
+    // We're likely running inside valgrind. Libmemleak and Valgrind cannot be
+    // run at the same time, libmemleak will keep references to potentially lost
+    // memory, preventing valgrind to detect them as leaks.
+    printf("Valgrind detected, libmemleak is disabling itself\n");
+    inside_valgrind = 1;
+    return;
+  }
   addr2line_init();
   pthread_create(&monitor_thread, NULL, &monitor, NULL);
   stats.max_backtraces = 4;
@@ -753,7 +764,7 @@ static __thread int inside_memleak_stats = 0;
 
 static void add(Header* header, size_t size, void** backtrace, int backtrace_size, size_t offset)
 {
-  if (UNLIKELY(inside_memleak_stats||inside_memleak_init))
+  if (UNLIKELY(inside_memleak_stats||inside_memleak_init||inside_valgrind))
   {
     header->magic_number = MAGIC_MEMLEAK_STATS;
     header->posix_memalign_offset = offset;
