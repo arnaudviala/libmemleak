@@ -39,6 +39,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <errno.h>
+#include <signal.h>   // for raise() and SIGTRAP
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -638,6 +639,72 @@ static void update_interval_del(Header* header)
   }
 }
 
+//----
+// Breakpoints management
+
+struct Breakpoint {
+  struct Breakpoint * prev;
+  struct Breakpoint * next;
+  int backtrace_nr;
+};
+
+static struct Breakpoint * breakpoints_head = NULL;
+
+struct Breakpoint * breakpoints_find(int backtrace_nr)
+{
+  struct Breakpoint * breakpoints = breakpoints_head;
+  while(breakpoints)
+  {
+    if (breakpoints->backtrace_nr == backtrace_nr)
+      return breakpoints;
+    breakpoints = breakpoints->next;
+  }
+  return NULL;
+}
+
+void breakpoints_add(int backtrace_nr)
+{
+  if (!breakpoints_find(backtrace_nr))
+  {
+    struct Breakpoint * breakpoint = (struct Breakpoint *)(*memleak_libc_malloc)(sizeof(struct Breakpoint));
+    breakpoint->backtrace_nr = backtrace_nr;
+    breakpoint->next = breakpoints_head;
+    breakpoint->prev = NULL;
+    if (breakpoints_head) breakpoints_head->prev = breakpoint;
+    breakpoints_head = breakpoint;
+  }
+}
+
+void breakpoints_del(int backtrace_nr)
+{
+  struct Breakpoint * breakpoint = breakpoints_find(backtrace_nr);
+  if (breakpoint)
+  {
+    if (breakpoint->prev) breakpoint->prev->next = breakpoint->next;
+    if (breakpoint->next) breakpoint->next->prev = breakpoint->prev;
+    if (breakpoint == breakpoints_head) breakpoints_head = breakpoint->next;
+    (*memleak_libc_free)(breakpoint);
+  }
+}
+
+void breakpoints_print(int fd)
+{
+  if (!breakpoints_head) {
+    my_write(fd, "No breakpoints\n", 15);
+    return;
+  }
+
+  struct Breakpoint * breakpoints = breakpoints_head;
+  my_write(fd, "Breakpoints:\n", 13);
+  while(breakpoints)
+  {
+    char str[80];
+    int len = snprintf(str, sizeof(str), "- %d\n", breakpoints->backtrace_nr);
+    my_write(fd, str, len);
+    breakpoints = breakpoints->next;
+  }
+}
+
 //---------------------------------------------------------------------------------------------
 // Our administration
 
@@ -699,6 +766,13 @@ static void add(Header* header, size_t size, void** backtrace, int backtrace_siz
   pthread_mutex_lock(&memleak_mutex);
   header->backtrace = update_entry_add(backtrace, backtrace_size);
   header->backtrace->allocations_size += size;
+
+  if (breakpoints_find(header->backtrace->backtrace_nr))
+  {
+    // There's a "breakpoint" on this backtrace
+    raise(SIGTRAP);
+  }
+
 #ifdef DEBUG_EXPENSIVE
   --(header->backtrace->allocations);
   check_intervals(header->backtrace);
@@ -1580,6 +1654,9 @@ static void* monitor(void* dummy __attribute__((unused)))
               "restart M: Automatically restart every N * M stats.\n",
               "list N   : When printing stats, print only the first N backtraces.\n",
               "dump N   : Print backtrace number N.  (alias 'bt N')\n",
+              "break N  : Raise SIGTRAP when backtrace number N occurs.\n",
+              "break -N : Disable SIGTRAP for backtrace number N.\n",
+              "break    : Print the list of backtraces that would raise SIGTRAP.\n",
             };
             for (size_t line = 0; line < sizeof(helptext) / sizeof(char*); ++line)
               my_write(fd, helptext[line], strlen(helptext[line]));
@@ -1719,6 +1796,22 @@ static void* monitor(void* dummy __attribute__((unused)))
               }
               my_write(fd, buf, len);
             }
+          }
+          else if (strcmp(buf, "break") == 0)
+          {
+            breakpoints_print(fd);
+          }
+          else if (strncmp(buf, "break ", 6) == 0)
+          {
+            char * space = strchr(buf, ' ');
+            int arg = atoi(space);
+            pthread_mutex_lock(&memleak_mutex);
+            if (arg > 0) {
+              breakpoints_add(arg);
+            } else if (arg < 0) {
+              breakpoints_del(-arg);
+            }
+            pthread_mutex_unlock(&memleak_mutex);
           }
           else
             my_write(fd, "Ignored.\n", 9);
