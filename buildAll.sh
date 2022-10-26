@@ -53,6 +53,7 @@ build_product()
         # local libreadline=$(find ${readline_dir} -name "libreadline.so")
         # cmake_opts="${cmake_opts} -DREADLINE_LIBRARY=${libreadline} -DREADLINE_INCLUDE_DIR=${readline_dir}/include"
         # TODO: same for libbfd (when it is ready)
+        cmake_opts="${cmake_opts} -DNO_COMBINE_INTERVAL=ON"
         ;;
     *)
         echo "Platform $platform is unhandled"
@@ -69,6 +70,9 @@ build_product()
     elif [ -f "${PATH_TO_VOS_SDKS}/${platform}/out/sysroots/x86_64-oesdk-linux/usr/share/cmake/OEToolchainConfig.cmake" ]; then
         CMAKE="${CMAKE} -DCMAKE_TOOLCHAIN_FILE=${PATH_TO_VOS_SDKS}/${platform}/out/sysroots/x86_64-oesdk-linux/usr/share/cmake/OEToolchainConfig.cmake"
     fi
+
+    # Make a Debug build
+    # cmake_opts="${cmake_opts} -DCMAKE_BUILD_TYPE=Debug"
 
     local builddir=build/${platform}/
     # Old versions of cmake (at least, Vulcan's one) do not like the following ...
