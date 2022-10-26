@@ -784,6 +784,59 @@ time_t interval_class(time_t interval)
   return v;
 }
 
+/* The following method testing interval_class()
+ *
+void test__interval_class(void)
+{
+  time_t cls = 0;
+  for(time_t t=0 ; t<0xFFFFFFFF ; t++)
+  {
+      time_t cls2 = interval_class(t);
+      if (cls2 == cls) continue;
+      printf("Class changed from old=%d to new=%d at time=%d\n", cls, cls2, t);
+      cls = cls2;
+  }
+}
+ *
+ * would produce the following output. You can see its grouping interval into
+ * classes in an exponential way.
+ *
+ * | Class changed from old=0 to new=1 at time=0
+ * | Class changed from old=1 to new=2 at time=2
+ * | Class changed from old=2 to new=4 at time=3
+ * | Class changed from old=4 to new=8 at time=6
+ * | Class changed from old=8 to new=16 at time=11
+ * | Class changed from old=16 to new=32 at time=22
+ * | Class changed from old=32 to new=64 at time=43
+ * | Class changed from old=64 to new=128 at time=86
+ * | Class changed from old=128 to new=256 at time=171
+ * | Class changed from old=256 to new=512 at time=342
+ * | Class changed from old=512 to new=1024 at time=683
+ * | Class changed from old=1024 to new=2048 at time=1366
+ * | Class changed from old=2048 to new=4096 at time=2731
+ * | Class changed from old=4096 to new=8192 at time=5462
+ * | Class changed from old=8192 to new=16384 at time=10923
+ * | Class changed from old=16384 to new=32768 at time=21846
+ * | Class changed from old=32768 to new=65536 at time=43691
+ * | Class changed from old=65536 to new=131072 at time=87382
+ * | Class changed from old=131072 to new=262144 at time=174763
+ * | Class changed from old=262144 to new=524288 at time=349526
+ * | Class changed from old=524288 to new=1048576 at time=699051
+ * | Class changed from old=1048576 to new=2097152 at time=1398102
+ * | Class changed from old=2097152 to new=4194304 at time=2796203
+ * | Class changed from old=4194304 to new=8388608 at time=5592406
+ * | Class changed from old=8388608 to new=16777216 at time=11184811
+ * | Class changed from old=16777216 to new=33554432 at time=22369622
+ * | Class changed from old=33554432 to new=67108864 at time=44739243
+ * | Class changed from old=67108864 to new=134217728 at time=89478486
+ * | Class changed from old=134217728 to new=268435456 at time=178956971
+ * | Class changed from old=268435456 to new=536870912 at time=357913942
+ * | Class changed from old=536870912 to new=1073741824 at time=715827883
+ * | Class changed from old=1073741824 to new=-2147483648 at time=1431655766
+ * | Class changed from old=-2147483648 to new=0 at time=-1431655765
+ * | Ctrl^C
+ */
+
 void memleak_stats_fp(FILE* fp)
 {
   // Do not record memory allocated from this function.
