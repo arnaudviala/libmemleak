@@ -1782,7 +1782,7 @@ static void* monitor(void* dummy __attribute__((unused)))
             my_write(fd, buf, len);
           }
           else if (strncmp(buf, "dump ", 5) == 0
-                || strncmp(buf, "bt ", 5) == 0)
+                || strncmp(buf, "bt ", 3) == 0)
           {
             char * space = strchr(buf, ' ');
             int arg = atoi(space);
