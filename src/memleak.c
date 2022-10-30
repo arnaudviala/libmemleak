@@ -1490,6 +1490,85 @@ void interval_restart_recording()
   printf("*** RESTART RECORDING ***\n");
 }
 
+static void print_top_N_backtraces(FILE* fp, size_t N)
+{
+  // This function is using `sort_n()` method which is accessing the fields
+  // `next_n` and `value_n`. This WILL conflict with the usage of `sort_n()`
+  // in the `memleak_stats_fp()` method. (using different value of N.)
+  //
+  // To simplify the conflict, we simply not allow using the 'top' command
+  // while recording.
+  if (stats.recording)
+  {
+    fprintf(fp, "The 'top' command is not available while recording.\n");
+    return;
+  }
+
+  size_t total_count_entries = 0;
+
+  pthread_mutex_lock(&memleak_mutex);
+
+  // Before invoking sort_n():
+  // - browser all entry in the backtraces list and set `value_n` to the allocations size
+  // - keep a reference of the `first_entry_n`, so we can update it after sorting
+  //   (some new backtraces may have been allocated and we need to update the next_n linking)
+  Stats  local_stats = stats;
+  BacktraceEntry* first_node_n = stats.first_entry_n;
+
+  for(BacktraceEntry* entry = local_stats.first_entry; entry; entry = entry->next)
+  {
+    entry->value_n = (double)entry->allocations_size;
+    total_count_entries++;
+  }
+
+  // UNLOCK ADMINISTRATIVE DATA
+  pthread_mutex_unlock(&memleak_mutex);
+
+  // Sort the backtraces.
+  local_stats.first_entry_n = sort_n(local_stats.first_entry_n, NULL);
+
+  // LOCK ADMINISTRATIVE DATA
+  pthread_mutex_lock(&memleak_mutex);
+
+  // Re-adjust the `next_n` linking after sorting. New nodes may have been inserted.
+  // We browse the `stats` n-sorted list, from `stats.first_entry_n` until we find
+  // the remembered `first_node_n`. When found, we simply replace the `previous->next_n`
+  // with the new sorted `local_stats.first_entry_n`.
+  BacktraceEntry** entry_ptr_n = &stats.first_entry_n;
+  while(*entry_ptr_n != first_node_n)
+    entry_ptr_n = &(*entry_ptr_n)->next_n;
+  // Set it to the start of the sorted linked list.
+  *entry_ptr_n = local_stats.first_entry_n;
+
+  // Only recopy the elements from `struct BacktraceEntry` we want to print
+  struct TopConsumer {
+    int allocations;                              //!< Number of current allocations with this backtrace.
+    size_t allocations_size;                      //!< Total size of current allocations with this backtrace.
+    int backtrace_nr;                             //!< Small unique ID assigned to this backtrace.
+  };
+  struct TopConsumer * top_consumers = (struct TopConsumer *)(*memleak_libc_calloc)(N, sizeof(struct TopConsumer));
+  size_t top_consumers_count = 0;
+  for(BacktraceEntry* entry = local_stats.first_entry_n; entry && (top_consumers_count < N); entry = entry->next_n)
+  {
+    struct TopConsumer * topconsumer = &top_consumers[top_consumers_count];
+    topconsumer->allocations = entry->allocations;
+    topconsumer->allocations_size = entry->allocations_size;
+    topconsumer->backtrace_nr = entry->backtrace_nr;
+    top_consumers_count++;
+  }
+  pthread_mutex_unlock(&memleak_mutex);
+
+  fprintf(fp, "Out of %zu backtraces, here is the \"Top %zu\":\n", total_count_entries, top_consumers_count);
+  for(size_t b=0 ; b<top_consumers_count ; b++)
+  {
+    struct TopConsumer * topconsumer = &top_consumers[b];
+    fprintf(fp, "  Backtrace %d: %zu bytes (%d allocations)\n",
+      topconsumer->backtrace_nr, topconsumer->allocations_size, topconsumer->allocations);
+  }
+
+  (*memleak_libc_free)(top_consumers);
+}
+
 static int quit = 0;
 static void terminate();
 static int sockfd;
@@ -1667,6 +1746,7 @@ static void* monitor(void* dummy __attribute__((unused)))
               "restart M: Automatically restart every N * M stats.\n",
               "list N   : When printing stats, print only the first N backtraces.\n",
               "dump N   : Print backtrace number N.  (alias 'bt N')\n",
+              "top N    : Show the N most consuming backtraces (since app init, no intervals).\n"
               "break N  : Raise SIGTRAP when backtrace number N occurs.\n",
               "break -N : Disable SIGTRAP for backtrace number N.\n",
               "break    : Print the list of backtraces that would raise SIGTRAP.\n",
@@ -1825,6 +1905,26 @@ static void* monitor(void* dummy __attribute__((unused)))
               breakpoints_del(-arg);
             }
             pthread_mutex_unlock(&memleak_mutex);
+          }
+          else if (strncmp(buf, "top ", 4) == 0)
+          {
+            int arg = atoi(buf + 4);
+            int len;
+            if (arg < 1)
+            {
+              len = snprintf(buf, sizeof(buf), "Argument of list must be at least 1.\n");
+              if (len > 80)
+              {
+                buf[79] = '\n';
+                len = 80;
+              }
+              my_write(fd, buf, len);
+            }
+            else
+            {
+              print_top_N_backtraces(fdfp, arg);  // will lock `memleak_mutex`
+              fflush(fdfp);
+            }
           }
           else
             my_write(fd, "Ignored.\n", 9);
