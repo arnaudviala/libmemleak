@@ -53,6 +53,11 @@ build_product()
         # local libreadline=$(find ${readline_dir} -name "libreadline.so")
         # cmake_opts="${cmake_opts} -DREADLINE_LIBRARY=${libreadline} -DREADLINE_INCLUDE_DIR=${readline_dir}/include"
         # TODO: same for libbfd (when it is ready)
+        local libbfd=$(find ${PATH_TO_EOS}/out/binutils -name "libbfd.so" 2>/dev/null)
+        echo libbfd=${libbfd}
+        if [ -n "${libbfd}" ]; then
+            cmake_opts="${cmake_opts} -DBFD_LIBRARY=${libbfd} -DBFD_INCLUDE_DIR=${PATH_TO_EOS}/out/binutils/usr/include"
+        fi
         cmake_opts="${cmake_opts} -DNO_COMBINE_INTERVAL=ON"
         ;;
     *)

@@ -5,10 +5,6 @@
 #include <cstdio>
 #include <string.h>        // for memset()
 
-extern "C" {
-#include "addr2line.h"
-}
-
 #ifdef DIRECT_LINKED
 #include <unistd.h>
 extern "C" void memleak_stats();
