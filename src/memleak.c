@@ -1163,9 +1163,9 @@ void memleak_stats_fp(FILE* fp)
     fprintf(fbacktraces, "\n");
   }
   fclose(fbacktraces);
-#endif // disable saving to file
   if (entries > 0)
     fprintf(fp, "libmemleak: Wrote %d new backtraces.\n", entries);
+#endif // disable saving to file
   (*memleak_libc_free)(backtraces);
 
   // Done.
@@ -1875,9 +1875,8 @@ static void* monitor(void* dummy __attribute__((unused)))
             pthread_mutex_unlock(&memleak_mutex);
             if (entry)
             {
-              FILE* fp = fdopen(fd, "a");
-              addr2line_print(fp, entry->ptr, entry->backtrace_size);
-              fflush(fp);
+              addr2line_print(fdfp, entry->ptr, entry->backtrace_size);
+              fflush(fdfp);
             }
             else
             {
