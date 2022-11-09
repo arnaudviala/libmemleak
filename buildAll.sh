@@ -18,13 +18,9 @@ build_product()
     local cmake_opts=
     echo -e "#\n#\n#  Building for $platform\n#\n#"
     case $platform in
-    "mt8518"|"ares"|"vulcan"|"theia")
+    "mt8518"|"ares"|"vulcan"|"theia"|"asteria")
         echo "Sourcing the Yocto environment for $platform..."
         source ${PATH_TO_VOS_SDKS}/${platform}/out/setup-env.sh
-        ;;
-    "asteria")
-        echo "Platform $platform is unsupported for now"
-        return 1
         ;;
     "lxsim")
         local env=$(_find_latest_lxsim_env)
