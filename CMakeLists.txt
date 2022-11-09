@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 
+project(libmemleak VERSION 0.1.2 LANGUAGES C CXX)
+set(PROJECT_VERSION ${PROJECT_VERSION}.2211A)
+
 SET(CMAKE_INSTALL_PREFIX /usr)
 include(GNUInstallDirs)
 
-project(libmemleak VERSION 0.1.2 LANGUAGES C CXX)
-set(PROJECT_VERSION ${PROJECT_VERSION}.2210A)
 
 # TODO: Find an easy CMake variable telling the full TARGET arch
 # will probably make this CMakeLists.txt only compatible with GCC - fine for now
