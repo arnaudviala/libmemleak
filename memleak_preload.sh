@@ -16,7 +16,7 @@ if [ -d /lib64 ]; then SYSTEM_DIRS="/lib64 /usr/lib64"; fi
 machine=`uname -m`
 # memleak could be installed in various places...
 # (`find ... -print -quit` will return the first match only)
-[ -z $LIBMEMLEAK ] && LIBMEMLEAK=$(find staging-$machine ${SYSTEM_DIRS} /config -name "libmemleak.so" -print -quit 2>/dev/null)
+[ -z $LIBMEMLEAK ] && LIBMEMLEAK=$(find staging-$machine ${SYSTEM_DIRS} /config -name "libmemleak.so*" -print -quit 2>/dev/null)
 [ -z $LIBDL ] && LIBDL=$(find ${SYSTEM_DIRS} -name "libdl.so.[0-9]" -print -quit 2>/dev/null)
 [ -z $LIBBFD ] && LIBBFD=$(find ${SYSTEM_DIRS} -name "libbfd*.so" -print -quit 2>/dev/null)
 [ -z $LIBPTHREAD ] && LIBPTHREAD=$(find ${SYSTEM_DIRS} -name "libpthread.so.[0-9]" -print -quit 2>/dev/null)
@@ -31,6 +31,7 @@ echo " - prog: ${PROG_TO_RUN}"
 echo " - args: ${PROG_ARGS}"
 echo ""
 
-LD_PRELOAD="${LIBMEMLEAK} ${LIBDL} ${LIBBFD} ${LIBPTHREAD}" \
+export LD_PRELOAD="${LIBMEMLEAK} ${LIBDL} ${LIBBFD} ${LIBPTHREAD}"
+exec \
 	${PROG_TO_RUN} \
 	${PROG_ARGS}
