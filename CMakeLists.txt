@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(libmemleak VERSION 0.1.2 LANGUAGES C CXX)
-set(PROJECT_VERSION ${PROJECT_VERSION}.2211A)
+set(PROJECT_VERSION ${PROJECT_VERSION}.2405A)
 
 SET(CMAKE_INSTALL_PREFIX /usr)
 include(GNUInstallDirs)
