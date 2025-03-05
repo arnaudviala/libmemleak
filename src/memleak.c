@@ -47,6 +47,12 @@
 #include "addr2line.h"
 #include "sort.h"
 
+#if (__BITS_PER_LONG == 64 || defined(__USE_TIME_BITS64))
+#define PRITIME "lld"
+#else
+#define PRITIME "ld"
+#endif
+
 static void* malloc_bootstrap1(size_t size);
 static void* calloc_bootstrap1(size_t nmemb, size_t size);
 static void init();
@@ -308,12 +314,12 @@ static time_t interval_start;
 
 void interval_print(Interval const* interval, FILE* fp)
 {
-  fprintf(fp, "[%4lu,", interval->start);
+  fprintf(fp, "[%4" PRITIME ",", interval->start);
   if (interval->end)
-    fprintf(fp, "%4lu>(%4lu)", interval->end, interval->end - interval->start);
+    fprintf(fp, "%4" PRITIME ">(%4" PRITIME ")", interval->end, interval->end - interval->start);
   else
     fprintf(fp, "now");
-  fprintf(fp, ": %5zu allocations (%6zu total, %4.1f%%), size %7zu; %6.2f allocations/s, %lu bytes/s\n",
+  fprintf(fp, ": %5zu allocations (%6zu total, %4.1f%%), size %7zu; %6.2f allocations/s, %" PRITIME " bytes/s\n",
       interval->n, interval->total_n, (100.0 * interval->n / interval->total_n), interval->size,
       (double)interval->n / (interval->end - interval->start),
       interval->size / (interval->end - interval->start));
@@ -361,7 +367,7 @@ static void interval_add(Interval* interval, Header* header)
     assert(interval->first == NULL);
     interval->first = header;
 #ifdef DEBUG_VERBOSE
-    printf("Backtrace: %p: interval [%lu - %lu>(%lu); added first = header = %p[%lu] (header->prev = %p; &header->backtrace->head = %p)\n",
+    printf("Backtrace: %p: interval [%" PRITIME " - %" PRITIME ">(%" PRITIME "); added first = header = %p[%" PRITIME "] (header->prev = %p; &header->backtrace->head = %p)\n",
             header->backtrace, interval->start, interval->end, interval->end - interval->start, header, header->time, header->prev, &header->backtrace->head);
 #endif
     assert(header->next == &header->backtrace->head || header->next->time < interval->start);
@@ -369,7 +375,7 @@ static void interval_add(Interval* interval, Header* header)
 #ifdef DEBUG_VERBOSE
   else
   {
-    printf("Backtrace: %p: interval [%lu - %lu>(%lu); interval->n = %lu; added header %p[%lu] (&header->backtrace->head = %p",
+    printf("Backtrace: %p: interval [%" PRITIME " - %" PRITIME ">(%" PRITIME "); interval->n = %zu; added header %p[%" PRITIME "] (&header->backtrace->head = %p",
             header->backtrace, interval->start, interval->end, interval->end - interval->start, interval->n + 1, header, header->time, &header->backtrace->head);
     Header* h = interval->first;
     int cnt = 0;
@@ -383,7 +389,7 @@ static void interval_add(Interval* interval, Header* header)
       printf(" = %p", h);
       if (h == &header->backtrace->head)
         break;
-      printf("[%lu]", h->time);
+      printf("[%" PRITIME "]", h->time);
       h = h->prev;
       ++cnt;
     }
@@ -401,7 +407,7 @@ static void interval_del(Interval* interval, Header* header, time_t life_time __
   assert(interval->n > 0);
   interval->n -= 1;
 #ifdef DEBUG_VERBOSE
-  printf("Backtrace %p: deleting header %p; interval->n is now %lu; &header->backtrace->head = %p; interval->first = %p\n", header->backtrace, header, interval->n, &header->backtrace->head, interval->first);
+  printf("Backtrace %p: deleting header %p; interval->n is now %zu; &header->backtrace->head = %p; interval->first = %p\n", header->backtrace, header, interval->n, &header->backtrace->head, interval->first);
   Header* h = interval->first;
   int cnt = 0;
   for(;;)
@@ -454,7 +460,8 @@ static void interval_combine(BacktraceEntry* entry, Interval* interval)
   assert(interval->end);
   assert(interval->prev->start == interval->end);
 #ifdef DEBUG_VERBOSE
-  printf("Backtrace #%-2d: Combining [%4lu,%4lu>(%lu) with [%4lu,%4lu>(%lu).\n", entry->backtrace_nr,
+  printf("Backtrace #%-2d: Combining [%4" PRITIME ",%4" PRITIME ">(%" PRITIME ") with [%4" PRITIME ",%4" PRITIME ">(%" PRITIME ").\n",
+      entry->backtrace_nr,
       interval->start, interval->end, interval->end - interval->start,
       interval->prev->start, interval->prev->end, interval->prev->end - interval->prev->start);
 #endif
@@ -1092,7 +1099,7 @@ void memleak_stats_fp(FILE* fp)
     totm /= 10;
     ++count2;
   }
-  fprintf(fp, "%s: Now: %lu; \tBacktraces: %zu; \tallocations: %zu; \ttotal memory: %s bytes.\n",
+  fprintf(fp, "%s: Now: %" PRITIME "; \tBacktraces: %zu; \tallocations: %zu; \ttotal memory: %s bytes.\n",
       appname, now, local_stats.backtraces, local_stats.allocations, p);
 
   // Print all intervals and mark the backtrace entries as needing printing.
@@ -1193,8 +1200,8 @@ static void memleak_final_stats() {
     {
       ++count;
       // Interval* interval = header->interval;
-      printf("\tAlloc %d: Header %p; time %lu; size %lu", count, header,
-        (long unsigned int)header->time, (long unsigned int)header->size);
+      printf("\tAlloc %d: Header %p; time %" PRITIME "; size %zu", count, header,
+        header->time, header->size);
       printf("\n");
     }
     printf("(count=%d)\n", count);
@@ -1648,7 +1655,7 @@ static void* monitor(void* dummy __attribute__((unused)))
   printf("libmemleak: Restart multiplier set to %d\n", restart_multiplier);
   char const* stats_interval_str = getenv("LIBMEMLEAK_STATS_INTERVAL");
   struct timeval sleeptime = { stats_interval_str ? atoi(stats_interval_str) : 1, 0 };
-  printf("libmemleak: Printing memory statistics every %lu seconds.\n", sleeptime.tv_sec);
+  printf("libmemleak: Printing memory statistics every %" PRITIME " seconds.\n", sleeptime.tv_sec);
   for(;;)
   {
     // Only linux, select modifies timeout to be the remaining time, so initialize it here.
@@ -1762,7 +1769,8 @@ static void* monitor(void* dummy __attribute__((unused)))
             if (strcmp(buf, "start") == 0) {
               interval_start_recording();
             }
-            int len = snprintf(buf, sizeof(buf), "Auto restart interval is %d * %lu seconds.\n", restart_multiplier, sleeptime.tv_sec);
+            int len = snprintf(buf, sizeof(buf), "Auto restart interval is %d * %" PRITIME " seconds.\n",
+              restart_multiplier, sleeptime.tv_sec);
             if (len > 80)
             {
               buf[79] = '\n';
@@ -1780,7 +1788,9 @@ static void* monitor(void* dummy __attribute__((unused)))
           }
           else if (strcmp(buf, "delete") == 0)
           {
-            int len = snprintf(buf, sizeof(buf), "Deleting all intervals that end before %lu seconds since application start.\n", stats.oldest_interval_end);
+            int len = snprintf(buf, sizeof(buf),
+              "Deleting all intervals that end before %" PRITIME " seconds since application start.\n",
+              stats.oldest_interval_end);
             if (len > 80)
             {
               buf[79] = '\n';
@@ -1805,7 +1815,7 @@ static void* monitor(void* dummy __attribute__((unused)))
             if (arg >= 1)
             {
               sleeptime.tv_sec = arg;
-              len = snprintf(buf, sizeof(buf), "Printing memory statistics every %lu seconds.\n", sleeptime.tv_sec);
+              len = snprintf(buf, sizeof(buf), "Printing memory statistics every %" PRITIME " seconds.\n", sleeptime.tv_sec);
             }
             else
             {
@@ -2108,9 +2118,9 @@ void print_entry(BacktraceEntry* entry)
   {
     ++count;
     Interval* interval = header->interval;
-    printf("%d: Header %p; time %lu; interval %p", count, header, header->time, interval);
+    printf("%d: Header %p; time %" PRITIME "; interval %p", count, header, header->time, interval);
     if (interval)
-      printf(" [%lu, %lu>; interval->first = %p", interval->start, interval->end, interval->first);
+      printf(" [%" PRITIME ", %" PRITIME ">; interval->first = %p", interval->start, interval->end, interval->first);
     printf("\n");
   }
 }
