@@ -47,7 +47,9 @@
 #include "addr2line.h"
 #include "sort.h"
 
-#if (__BITS_PER_LONG == 64 || defined(__USE_TIME_BITS64))
+// Note: on 64 bits architecture, __USE_TIME_BITS64 is not defined. This is fine
+//       for the sake of defining PRITIME (as PRITIME "ld" will work on 64 bits)
+#if (defined(__USE_TIME_BITS64))
 #define PRITIME "lld"
 #else
 #define PRITIME "ld"
